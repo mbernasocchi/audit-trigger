@@ -185,7 +185,17 @@ DECLARE
   stm_targets text = 'INSERT OR UPDATE OR DELETE OR TRUNCATE';
   _q_txt text;
   _ignored_cols_snip text = '';
+  _schema_aware_target_table text = '';
 BEGIN
+    -- this allow passing schema to SELECT audit.audit_table('mySchema.myTable');
+    SELECT INTO _schema_aware_target_table
+        CASE WHEN array_length(regexp_split_to_array(target_table::TEXT, '\.'), 1) = 2
+            THEN concat(quote_ident(split_part(target_table::TEXT, '.', 1)),
+                  '.',
+                  quote_ident(split_part(target_table::TEXT, '.', 2)))
+            ELSE quote_ident(target_table :: TEXT)
+        END;
+        
     EXECUTE 'DROP TRIGGER IF EXISTS audit_trigger_row ON ' || quote_ident(target_table::TEXT);
     EXECUTE 'DROP TRIGGER IF EXISTS audit_trigger_stm ON ' || quote_ident(target_table::TEXT);
 
